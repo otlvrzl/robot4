@@ -1,0 +1,81 @@
+# slam_toolbox.yaml - settings for SLAM Toolbox, the program that builds the map.
+#
+# WHAT IS SLAM?  "Simultaneous Localization And Mapping". While the robot drives, SLAM
+#   1. compares each new LIDAR scan with the earlier ones (scan matching) to correct the
+#      robot's position, and
+#   2. adds the scan to a map: free space, walls and obstacles.
+#
+# WHAT SLAM PUBLISHES
+#   /map            the map itself (an "occupancy grid": free / occupied / unknown cells)
+#   TF  map->odom   the correction of the robot's position. Together with the odom->base_link
+#                   transform from the wheels it tells where the robot is IN THE MAP.
+#
+# We use the "online asynchronous" mode: it processes the newest scans live and skips
+# scans if the computer is busy, so the map keeps up with the simulation.
+#
+# Only the settings that matter for us are explained; the rest are sensible defaults
+# from the SLAM Toolbox examples.
+slam_toolbox:
+  ros__parameters:
+
+    # ---- Solver: the maths program that corrects the position estimates (keep as is) ----
+    solver_plugin: solver_plugins::CeresSolver
+    ceres_linear_solver: SPARSE_NORMAL_CHOLESKY
+    ceres_preconditioner: SCHUR_JACOBI
+    ceres_trust_strategy: LEVENBERG_MARQUARDT
+    ceres_dogleg_type: TRADITIONAL_DOGLEG
+    ceres_loss_function: None
+
+    # ---- Frames and topics: MUST match our robot ----
+    odom_frame: odom          # where the robot started (published by the Gazebo DiffDrive plugin)
+    map_frame: map            # the frame of the map. SLAM publishes map -> odom
+    base_frame: base_link     # the robot's body frame (see the URDF)
+    scan_topic: /scan         # LIDAR measurements
+    mode: mapping             # "mapping" = build a NEW map. ("localization" = use an old one)
+
+    # ---- Map quality ----
+    resolution: 0.05          # size of one map cell in metres (5 cm)
+    max_laser_range: 10.0     # use LIDAR points up to this distance (our LIDAR sees 10 m)
+    min_laser_range: 0.0
+    map_update_interval: 2.0  # redraw the published /map every 2 seconds
+    minimum_time_interval: 0.5       # use at most one scan per 0.5 s...
+    minimum_travel_distance: 0.2     # ...and only after the robot has moved 20 cm...
+    minimum_travel_heading: 0.2      # ...or turned by about 11 degrees (0.2 rad)
+    # Why skip scans? Nearly identical scans add no new information but cost computer time.
+
+    # ---- Scan matching: aligning a new scan with the map built so far ----
+    use_scan_matching: true
+    use_scan_barycenter: true
+    scan_buffer_size: 10
+    scan_buffer_maximum_scan_distance: 10.0
+    link_match_minimum_response_fine: 0.1
+    link_scan_maximum_distance: 1.5
+    correlation_search_space_dimension: 0.5
+    correlation_search_space_resolution: 0.01
+    correlation_search_space_smear_deviation: 0.1
+    distance_variance_penalty: 0.5
+    angle_variance_penalty: 1.0
+    fine_search_angle_offset: 0.00349
+    coarse_search_angle_offset: 0.349
+    coarse_angle_resolution: 0.0349
+    minimum_angle_penalty: 0.9
+    minimum_distance_penalty: 0.5
+    use_response_expansion: true
+
+    # ---- Loop closure: when the robot returns to a place it has seen before, SLAM
+    #      notices and removes the small errors collected on the way ----
+    do_loop_closing: true
+    loop_search_maximum_distance: 3.0
+    loop_match_minimum_chain_size: 10
+    loop_match_maximum_variance_coarse: 3.0
+    loop_match_minimum_response_coarse: 0.35
+    loop_match_minimum_response_fine: 0.45
+
+    # ---- Technical settings ----
+    transform_publish_period: 0.02   # publish map->odom 50 times per second
+    transform_timeout: 0.2           # how long to wait for a TF transform (seconds)
+    tf_buffer_duration: 30.0         # how long TF history is kept (seconds)
+    throttle_scans: 1                # 1 = do not drop scans by count
+    stack_size_to_use: 40000000      # memory for the solver (bytes)
+    enable_interactive_mode: true
+    debug_logging: false

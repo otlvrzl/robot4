@@ -1,0 +1,88 @@
+<?xml version="1.0"?>
+<!--
+  ground_world.sdf - the simulated world: only a sun and a flat ground plane.
+  (SDF is Gazebo's native file format. URDF describes robots, SDF describes worlds.)
+-->
+<sdf version="1.9">
+  <world name="ground_world">   <!-- this name is also used in launch/ and config/bridge.yaml -->
+
+    <!-- Physics settings: simulate in steps of 1 millisecond. Smaller = more accurate, slower. -->
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>   <!-- 1.0 = simulated time runs at real-time speed -->
+    </physics>
+
+    <!-- SYSTEMS: Gazebo is made of small modules; we list the ones this world needs. -->
+    <!-- Physics: gravity, collisions, movement. Without it nothing would move. -->
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <!-- UserCommands: lets the Gazebo window (and our spawn command) add/move objects. -->
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <!-- SceneBroadcaster: sends the world state to the Gazebo window so you can see it. -->
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <!-- Sensors: computes the sensor data. The LIDAR will NOT work without this one. -->
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>   <!-- the 3D renderer used by camera/LIDAR sensors -->
+    </plugin>
+
+    <!-- Look of the scene: soft overall light, light-blue sky colour, shadows on. -->
+    <scene>
+      <ambient>0.4 0.4 0.4 1</ambient>
+      <background>0.7 0.8 0.9 1</background>
+      <shadows>true</shadows>
+    </scene>
+
+    <!-- The sun: a directional light, as if coming from very far away. -->
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.9 0.9 0.9 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <!-- The ground: a 100 x 100 m flat plane. <static> = it never moves.
+         It needs BOTH a collision (so the robot does not fall through)
+         and a visual (so we can see it). -->
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry><plane><normal>0 0 1</normal><size>100 100</size></plane></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><plane><normal>0 0 1</normal><size>100 100</size></plane></geometry>
+          <material>
+            <ambient>0.8 0.8 0.8 1</ambient>
+            <diffuse>0.8 0.8 0.8 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- OBSTACLE: a 1 x 1 x 1 m box standing exactly on the robot's circular path.
+         The circle has radius 4 m and its centre at (0, 5), so the point (4, 4) lies on it;
+         the robot reaches it after about a quarter lap.
+         <static>true</static> = the box never moves, not even if the robot bumps into it.
+         <pose> = x y z roll pitch yaw. z = 0.5 lifts the box by half its height,
+         so it stands ON the ground instead of sinking into it.
+         Like the ground it needs a collision (so it is solid, and so the LIDAR laser
+         beams hit it) and a visual (so we can see it). -->
+    <model name="obstacle_box">
+      <static>true</static>
+      <pose>4 4 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>1 1 1</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>1 1 1</size></box></geometry>
+          <material>
+            <ambient>0.9 0.5 0.1 1</ambient>   <!-- orange, easy to spot -->
+            <diffuse>0.9 0.5 0.1 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>

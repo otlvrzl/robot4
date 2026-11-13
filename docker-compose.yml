@@ -1,0 +1,120 @@
+# docker-compose.yml - describes HOW to run the container(s): which image, which folders
+# to share with your computer, which settings to pass. One command then starts everything:
+#     docker compose up sim        (Stage 1: robot wanders in the room)
+#     docker compose up mapping    (Stage 2: the same + SLAM builds a map)
+
+# "x-" blocks are reusable templates. &ros-common names it, "<<: *ros-common" reuses it,
+# so the settings below are written once and shared by the services `sim` and `shell`.
+x-ros-common: &ros-common
+  image: robot4-ros:jazzy          # the name given to the image built from our Dockerfile
+  build:
+    context: .                     # build using the Dockerfile in this folder
+    args:
+      # Your real user ID, written to .env by setup.sh (falls back to 1000).
+      USER_UID: ${HOST_UID:-1000}
+      USER_GID: ${HOST_GID:-1000}
+  # Share the host's network. Simplest way for ROS 2 programs and the GUI to find each other.
+  network_mode: host
+  # Share the host's /dev/shm between containers. `mapping`, `save_map` and `shell` are
+  # separate containers; ROS 2 sends data between programs through shared memory, so
+  # without this a second container can see nothing of what `mapping` publishes.
+  ipc: host
+  environment:
+    # Which screen to draw windows on (same as on your host).
+    - DISPLAY=${DISPLAY}
+    - QT_X11_NO_MITSHM=1
+    # Set SOFTWARE_RENDER=1 in .env if Gazebo/RViz show graphics errors.
+    - SOFTWARE_RENDER=${SOFTWARE_RENDER:-0}
+    - GZ_IP=${GZ_IP:-127.0.0.1}
+    # ROS 2 (Fast DDS) talks over plain network (UDP) only, never shared memory. This is the
+    # reliable way to let several containers on one computer exchange ROS 2 data.
+    - FASTDDS_BUILTIN_TRANSPORTS=UDPv4
+  volumes:
+    # Lets the container draw windows on your screen (the X11 display socket).
+    - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    # YOUR CODE: the host folder ./src appears as /ws/src in the container.
+    # Edit on the host, run in the container. Your files never live only inside Docker.
+    - ./src:/ws/src
+    # Build output goes into Docker-managed volumes (see bottom of file), not into your
+    # project folder, so git never sees it and your folder stays clean.
+    - ros_build:/ws/build
+    - ros_install:/ws/install
+    - ros_log:/ws/log
+  # Give the container access to the graphics card (Intel/AMD) for fast 3D.
+  # If /dev/dri does not exist on your computer, delete the next 2 lines.
+  devices:
+    - /dev/dri:/dev/dri
+  # Allow the container user to use the graphics devices (group IDs come from .env).
+  group_add:
+    - "${VIDEO_GID:-44}"
+    - "${RENDER_GID:-992}"
+  # NVIDIA GPU: install nvidia-container-toolkit on the host, then uncomment:
+  # deploy:
+  #   resources:
+  #     reservations:
+  #       devices:
+  #         - driver: nvidia
+  #           count: all
+  #           capabilities: [gpu]
+  stdin_open: true   # keep the keyboard connected (needed for interactive terminals)
+  tty: true
+
+services:
+  # `docker compose up sim`: builds your package, then starts Gazebo + RViz + the robot.
+  sim:
+    <<: *ros-common
+    # 1) colcon build   = compile/install the package from ./src
+    # 2) source ...     = make the freshly built package visible to ROS
+    # 3) ros2 launch    = start everything. Settings can be overridden from outside, e.g.
+    #                       LINEAR_SPEED=0.2 docker compose up sim
+    #                       DRIVER=none docker compose up sim     (nobody drives the robot)
+    #                       WORLD=ground_world DRIVER=avoider docker compose up sim   (old circle task)
+    #                     Defaults: world "room_world", driver "wander" (explores the room),
+    #                     speed 0.3 m/s. RADIUS and AVOID_DISTANCE only matter for the
+    #                     circle drivers (DRIVER=circle or DRIVER=avoider).
+    command: >
+      bash -c "colcon build --symlink-install &&
+      source install/setup.bash &&
+      ros2 launch simple_bot sim.launch.py
+      world:=${WORLD:-room_world} driver:=${DRIVER:-wander}
+      radius:=${RADIUS:-4.0} linear_speed:=${LINEAR_SPEED:-0.3}
+      avoid_distance:=${AVOID_DISTANCE:-1.0}"
+
+  # `docker compose up mapping`: like `sim`, but ALSO starts SLAM Toolbox, so the robot
+  # builds a map of the room while it wanders. RViz opens with the map layout.
+  # Same options as `sim`, e.g.  DRIVER=none docker compose up mapping  (you steer).
+  mapping:
+    <<: *ros-common
+    command: >
+      bash -c "colcon build --symlink-install &&
+      source install/setup.bash &&
+      ros2 launch simple_bot mapping.launch.py
+      world:=${WORLD:-room_world} driver:=${DRIVER:-wander}
+      linear_speed:=${LINEAR_SPEED:-0.3}"
+
+  # `docker compose run --rm save_map`: run it while `mapping` is running, when the map
+  # looks complete. It saves the current map as two files in src/simple_bot/maps/ :
+  #   room_map.pgm   the map as a grayscale picture
+  #   room_map.yaml  the map's settings (cell size, position, which picture to load)
+  # Another file name:  MAP_NAME=room_map_v2 docker compose run --rm save_map
+  # Because ./src is shared with your host, the files appear in your project folder.
+  save_map:
+    <<: *ros-common
+    # The list form (not one long string) is used because no `bash -c` is needed here.
+    command: ["ros2", "run", "nav2_map_server", "map_saver_cli",
+              "-f", "/ws/src/simple_bot/maps/${MAP_NAME:-room_map}",
+              "--ros-args", "-p", "save_map_timeout:=10.0"]
+    profiles: ["tools"]
+
+  # `docker compose run --rm shell`: an interactive terminal in the same environment,
+  # handy for commands like `ros2 topic list`. Only starts when you ask for it.
+  shell:
+    <<: *ros-common
+    command: bash
+    profiles: ["tools"]
+
+# Named storage areas managed by Docker (for the build output mentioned above).
+volumes:
+  ros_build:
+  ros_install:
+  ros_log:

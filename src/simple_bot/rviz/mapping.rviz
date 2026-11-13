@@ -1,0 +1,77 @@
+# mapping.rviz - RViz layout for the SLAM stage: it shows the map that is being built.
+# Differences from sim.rviz: the Fixed Frame is "map" and there is a Map display.
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+Visualization Manager:
+  Class: ""
+  Displays:
+    # The map built by SLAM Toolbox (topic /map):
+    #   white = free space, black = walls/obstacles, grey = not seen yet.
+    # "Transient Local" means: a newly opened RViz immediately receives the latest map
+    # instead of waiting for the next update. (SLAM publishes the map with this setting.)
+    - Class: rviz_default_plugins/Map
+      Name: Map
+      Enabled: true
+      Alpha: 0.9
+      Draw Behind: true
+      Topic:
+        Value: /map
+        Reliability Policy: Reliable
+        Durability Policy: Transient Local
+        History Policy: Keep Last
+        Depth: 1
+    # Floor grid (1 cell = 1 metre) to judge distances.
+    - Class: rviz_default_plugins/Grid
+      Name: Grid
+      Enabled: true
+      Cell Size: 1
+      Plane Cell Count: 30
+    # Draws the robot using the URDF published by robot_state_publisher.
+    - Class: rviz_default_plugins/RobotModel
+      Name: RobotModel
+      Enabled: true
+      Description Source: Topic
+      Description Topic:
+        Value: /robot_description
+        Reliability Policy: Reliable
+        Durability Policy: Transient Local
+    # The coordinate frames. Look for "map" -> "odom" -> "base_link": the first link is
+    # published by SLAM, the second by the wheels (DiffDrive plugin).
+    - Class: rviz_default_plugins/TF
+      Name: TF
+      Enabled: true
+      Show Names: true
+    # The current LIDAR measurement (red points). They should lie on the black map lines.
+    - Class: rviz_default_plugins/LaserScan
+      Name: LaserScan
+      Enabled: true
+      Size (m): 0.05
+      Style: Flat Squares
+      Color: 255; 0; 0
+      Color Transformer: FlatColor
+      Topic:
+        Value: /scan
+        Reliability Policy: Best Effort
+  Enabled: true
+  Global Options:
+    # Everything is drawn relative to the MAP frame (it never moves, the map is fixed).
+    Fixed Frame: map
+    Frame Rate: 30
+  Name: root
+  Value: true
+  Views:
+    Current:
+      # Camera looks from above at the middle of the room, 12 m away.
+      Class: rviz_default_plugins/Orbit
+      Name: Current View
+      Target Frame: <Fixed Frame>
+      Distance: 12
+      Pitch: 1.2
+      Yaw: 0.0
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: 0
+    Saved: ~
+Window Geometry: {}

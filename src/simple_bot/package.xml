@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<!-- package.xml = the package's "ID card": name, version, author, and what it needs. -->
+<package format="3">
+  <name>simple_bot</name>
+  <version>0.1.0</version>
+  <description>Simple differential-drive robot with a LIDAR, simulated in Gazebo, driving in a circle, avoiding obstacles, exploring a room and mapping it with SLAM.</description>
+  <maintainer email="otlvrzl@gmail.com">otlvrzl</maintainer>
+  <license>Apache-2.0</license>
+
+  <!-- Dependencies: other ROS packages that must be installed for ours to run.
+       If your code imports a new ROS package, add a line here. -->
+  <exec_depend>rclpy</exec_depend>                  <!-- Python library for ROS 2 -->
+  <exec_depend>geometry_msgs</exec_depend>          <!-- the Twist message type -->
+  <exec_depend>sensor_msgs</exec_depend>            <!-- the LaserScan message type (LIDAR) -->
+  <exec_depend>nav_msgs</exec_depend>               <!-- the Odometry message type -->
+  <exec_depend>ros_gz_sim</exec_depend>             <!-- starts Gazebo and spawns the robot -->
+  <exec_depend>ros_gz_bridge</exec_depend>          <!-- translates Gazebo <-> ROS topics -->
+  <exec_depend>robot_state_publisher</exec_depend>  <!-- publishes the robot's TF tree -->
+  <exec_depend>rviz2</exec_depend>                  <!-- visualization -->
+  <exec_depend>slam_toolbox</exec_depend>           <!-- SLAM: builds the map -->
+  <exec_depend>nav2_map_server</exec_depend>        <!-- saves / loads maps -->
+
+  <export>
+    <!-- Tells colcon this is a Python package. -->
+    <build_type>ament_python</build_type>
+  </export>
+</package>

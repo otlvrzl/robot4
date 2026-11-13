@@ -1,0 +1,71 @@
+# sim.rviz - saved RViz layout, so the window opens already showing what we need.
+# You can change displays in RViz and use File > Save Config to update this file.
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+Visualization Manager:
+  Class: ""
+  Displays:
+    # Floor grid (1 cell = 1 metre) to judge distances. The room is 8 x 6 m.
+    - Class: rviz_default_plugins/Grid
+      Name: Grid
+      Enabled: true
+      Cell Size: 1
+      Plane Cell Count: 30
+    # Draws the robot using the URDF published by robot_state_publisher.
+    - Class: rviz_default_plugins/RobotModel
+      Name: RobotModel
+      Enabled: true
+      Description Source: Topic
+      Description Topic:
+        Value: /robot_description
+        Reliability Policy: Reliable
+        Durability Policy: Transient Local
+    # Shows the coordinate frames (axes) of the robot parts.
+    - Class: rviz_default_plugins/TF
+      Name: TF
+      Enabled: true
+      Show Names: false
+    # The LIDAR measurements, drawn as red points. "Best Effort" matches how sensors publish.
+    - Class: rviz_default_plugins/LaserScan
+      Name: LaserScan
+      Enabled: true
+      Size (m): 0.05
+      Style: Flat Squares
+      Color: 255; 0; 0
+      Color Transformer: FlatColor
+      Topic:
+        Value: /scan
+        Reliability Policy: Best Effort
+    # Leaves an arrow for each of the last 300 odometry messages: this draws the path
+    # the robot has driven, so you can check it really is a circle.
+    - Class: rviz_default_plugins/Odometry
+      Name: Odometry (path trace)
+      Enabled: true
+      Keep: 300
+      Topic:
+        Value: /odom
+        Reliability Policy: Best Effort
+  Enabled: true
+  Global Options:
+    # Everything is drawn relative to this frame: "odom" = the robot's starting point,
+    # which does not move. (If we used base_link the robot would look stationary.)
+    Fixed Frame: odom
+    Frame Rate: 30
+  Name: root
+  Value: true
+  Views:
+    Current:
+      # Camera looks down from above at the room's centre (x=0, y=0), 12 m away.
+      Class: rviz_default_plugins/Orbit
+      Name: Current View
+      Target Frame: <Fixed Frame>
+      Distance: 12
+      Pitch: 1.0
+      Yaw: 0.8
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: 0
+    Saved: ~
+Window Geometry: {}

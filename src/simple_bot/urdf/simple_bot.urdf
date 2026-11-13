@@ -1,0 +1,208 @@
+<?xml version="1.0"?>
+<!--
+  simple_bot.urdf - describes the robot's body.
+
+  URDF basics:
+    <link>  = a rigid part of the robot (chassis, wheel, sensor...)
+    <joint> = how two links are connected (fixed, or able to spin)
+  Every link has:
+    <visual>    what it looks like
+    <collision> its shape for physics (what it can bump into)
+    <inertial>  its mass and how hard it is to rotate (needed by the physics engine)
+
+  Layout (seen from above, front = +X):
+
+              front
+        ==================
+        |     LIDAR      o   <- ball caster (front support)
+        | wheel    wheel |
+        ==================
+              back
+  Wheels are at the back, the caster at the front, so the robot stands on 3 points.
+-->
+<robot name="simple_bot">
+
+  <!-- Named colours, reused by the links below. rgba = red, green, blue, opacity (0..1). -->
+  <material name="blue"><color rgba="0.2 0.3 0.8 1"/></material>
+  <material name="black"><color rgba="0.1 0.1 0.1 1"/></material>
+  <material name="grey"><color rgba="0.6 0.6 0.6 1"/></material>
+  <material name="red"><color rgba="0.8 0.1 0.1 1"/></material>
+
+  <!-- ===================== CHASSIS (main body) ===================== -->
+  <!-- base_link is the "root" of the robot: every other part is attached to it.
+       Box size is x (length) y (width) z (height) in metres. 5 kg.
+       Its centre sits 0.07 m above the ground when the robot rests on its wheels. -->
+  <link name="base_link">
+    <visual>
+      <geometry><box size="0.4 0.25 0.1"/></geometry>
+      <material name="blue"/>
+    </visual>
+    <collision>
+      <geometry><box size="0.4 0.25 0.1"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="5.0"/>
+      <!-- Moments of inertia of a solid box (formula: m/12 * (a^2 + b^2)). -->
+      <inertia ixx="0.0302" iyy="0.0708" izz="0.0927" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <!-- ===================== WHEELS ===================== -->
+  <!-- A cylinder points along Z by default. rpy="1.5708 0 0" rotates it 90 degrees
+       (1.5708 rad) so it lies on its side, like a real wheel. radius 5 cm, width 4 cm. -->
+  <link name="left_wheel">
+    <visual>
+      <origin rpy="1.5708 0 0"/>
+      <geometry><cylinder radius="0.05" length="0.04"/></geometry>
+      <material name="black"/>
+    </visual>
+    <collision>
+      <origin rpy="1.5708 0 0"/>
+      <geometry><cylinder radius="0.05" length="0.04"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="0.5"/>
+      <inertia ixx="0.000379" iyy="0.000625" izz="0.000379" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <link name="right_wheel">
+    <visual>
+      <origin rpy="1.5708 0 0"/>
+      <geometry><cylinder radius="0.05" length="0.04"/></geometry>
+      <material name="black"/>
+    </visual>
+    <collision>
+      <origin rpy="1.5708 0 0"/>
+      <geometry><cylinder radius="0.05" length="0.04"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="0.5"/>
+      <inertia ixx="0.000379" iyy="0.000625" izz="0.000379" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <!-- "continuous" joint = can spin forever (like a wheel axle).
+       origin = where the wheel sits relative to the chassis centre (x back, y left/right, z down).
+       axis "0 1 0" = it spins around the Y axis (left-right), which rolls the robot forward. -->
+  <joint name="left_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="left_wheel"/>
+    <origin xyz="-0.1 0.15 -0.02"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <joint name="right_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="right_wheel"/>
+    <origin xyz="-0.1 -0.15 -0.02"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <!-- ===================== CASTER (third support point) ===================== -->
+  <!-- Two wheels alone would let the robot tip forward, so a small ball at the front
+       supports it. It is not driven; it just slides (friction is set to ~0 further down). -->
+  <link name="caster">
+    <visual>
+      <geometry><sphere radius="0.03"/></geometry>
+      <material name="grey"/>
+    </visual>
+    <collision>
+      <geometry><sphere radius="0.03"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.000036" iyy="0.000036" izz="0.000036" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <!-- "fixed" joint = glued on, cannot move. -->
+  <joint name="caster_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="caster"/>
+    <origin xyz="0.15 0 -0.04"/>
+  </joint>
+
+  <!-- ===================== LIDAR (the sensor body) ===================== -->
+  <!-- Only the physical shape here. The sensor's behaviour is defined in the
+       <gazebo reference="lidar_link"> block below. Mounted 7.5 cm above the chassis centre. -->
+  <link name="lidar_link">
+    <visual>
+      <geometry><cylinder radius="0.04" length="0.05"/></geometry>
+      <material name="red"/>
+    </visual>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.0000608" iyy="0.0000608" izz="0.00008" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="lidar_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="lidar_link"/>
+    <origin xyz="0 0 0.075"/>
+  </joint>
+
+  <!-- ===================== GAZEBO-ONLY SETTINGS ===================== -->
+  <!-- Everything inside <gazebo> tags is ignored by RViz and only used by the simulator. -->
+
+  <!-- Friction (mu1, mu2): the wheels need grip to push the robot forward,
+       but the caster must slide freely, otherwise it would drag. -->
+  <gazebo reference="left_wheel"><mu1>1.0</mu1><mu2>1.0</mu2></gazebo>
+  <gazebo reference="right_wheel"><mu1>1.0</mu1><mu2>1.0</mu2></gazebo>
+  <gazebo reference="caster"><mu1>0.001</mu1><mu2>0.001</mu2></gazebo>
+
+  <!-- The LIDAR: a laser range finder that measures the distance to obstacles.
+       "gpu_lidar" simulates it using the graphics card (fast). -->
+  <gazebo reference="lidar_link">
+    <sensor name="lidar" type="gpu_lidar">
+      <!-- Name of the Gazebo topic where measurements are published (bridged to ROS /scan). -->
+      <topic>scan</topic>
+      <!-- Name written into each scan message. Must match a link name so RViz knows
+           where the LIDAR is in space. -->
+      <gz_frame_id>lidar_link</gz_frame_id>
+      <update_rate>10</update_rate>      <!-- 10 scans per second -->
+      <always_on>true</always_on>
+      <visualize>false</visualize>       <!-- true would draw the laser rays in Gazebo (slower) -->
+      <lidar>
+        <scan>
+          <horizontal>
+            <samples>360</samples>               <!-- 360 laser rays... -->
+            <min_angle>-3.14159</min_angle>      <!-- ...spread over a full circle: -180 degrees -->
+            <max_angle>3.14159</max_angle>       <!--                                +180 degrees -->
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.12</min>                        <!-- ignore anything closer than 12 cm -->
+          <max>10.0</max>                        <!-- cannot see further than 10 m -->
+          <resolution>0.01</resolution>
+        </range>
+      </lidar>
+    </sensor>
+  </gazebo>
+
+  <!-- PLUGINS = ready-made Gazebo features that we switch on for this robot. -->
+  <gazebo>
+    <!-- DiffDrive: makes the robot drivable like a real "differential drive" robot.
+         It listens for speed commands, spins the two wheels accordingly, and reports
+         odometry (an estimate of the robot's position, from counting wheel turns). -->
+    <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
+      <left_joint>left_wheel_joint</left_joint>      <!-- must match the joint names above -->
+      <right_joint>right_wheel_joint</right_joint>
+      <wheel_separation>0.3</wheel_separation>       <!-- distance between wheels, metres -->
+      <wheel_radius>0.05</wheel_radius>              <!-- needed to convert m/s to wheel rotation -->
+      <frame_id>odom</frame_id>                      <!-- odometry is measured from the start point "odom" -->
+      <child_frame_id>base_link</child_frame_id>     <!-- ...and describes the position of base_link -->
+      <topic>cmd_vel</topic>                         <!-- listens for velocity commands here -->
+      <odom_topic>odom</odom_topic>                  <!-- publishes odometry here -->
+      <tf_topic>/tf</tf_topic>                       <!-- publishes the odom -> base_link transform here -->
+      <odom_publish_frequency>30</odom_publish_frequency>
+    </plugin>
+
+    <!-- JointStatePublisher: reports the current wheel angles so RViz can show
+         the wheels turning. -->
+    <plugin filename="gz-sim-joint-state-publisher-system"
+            name="gz::sim::systems::JointStatePublisher"/>
+  </gazebo>
+
+</robot>

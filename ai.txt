@@ -1,0 +1,25 @@
+## Project instructions
+    
+    Programming language is Python.
+
+    Use ROS 2 Jazzy + Gazebo Harmonic. I do not want to install ROS2 on my host Linux Ubuntu 24, this why I use docker container for ROS2 and Gazebo. However I want to keep my code on my host desktop and use my github account to store it.
+
+    Do the step-by-step plan how to crate the first simple robot described earlier. Do not write the code straight away.
+
+    Comment important blocks of code you produce, so a non experienced beginner developer can quickly understand what they do and why we need them.
+
+    Make a plan what and how do you want to change in the existing project, do now write code staigh away. Ater I confirm the plan, write the code and all other necessary changes. 
+
+
+## Task
+
+    I am a beginner in ROS2 / Gazebo / Nav2 development. I want to study it step-by-step. Programming language I use is Python.
+    The project (robot4, package simple_bot) has a simple robot on a wheeled chassis with a LIDAR on top.
+
+    Done: robot drives a circle and avoids one obstacle (ground_world, obstacle_avoider).
+    Stage 1 (done): robot in a simulated 8x6 m room (room_world.sdf) wanders around and avoids obstacles (wander.py).
+    Stage 2 (done): SLAM (slam_toolbox) creates a map of the room; map saved to src/simple_bot/maps for later use in Nav2.
+    Stage 3 (next, not started): Nav2 using the saved map.
+    Later: Nav2 on the saved map, computer vision using a simulated camera.
+
+    Work in stages: plan first, I confirm, then code. Comment code for beginners.

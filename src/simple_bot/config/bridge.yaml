@@ -1,0 +1,52 @@
+# bridge.yaml - which topics the ros_gz_bridge copies between Gazebo and ROS 2.
+#
+# Why is a bridge needed?  Gazebo and ROS 2 are separate systems with their own topics
+# and message formats. The bridge listens on one side and re-publishes on the other.
+#
+# Each entry says:
+#   ros_topic_name / gz_topic_name : the topic name on each side
+#   ros_type_name / gz_type_name   : the message type on each side
+#   direction                      : GZ_TO_ROS (sensor data coming out of the simulator)
+#                                    ROS_TO_GZ (commands going into the simulator)
+
+# Simulation clock. All nodes use it instead of the computer's clock (use_sim_time),
+# so that everything stays in sync even if the simulation runs slower than real time.
+- ros_topic_name: /clock
+  gz_topic_name: /clock
+  ros_type_name: rosgraph_msgs/msg/Clock
+  gz_type_name: gz.msgs.Clock
+  direction: GZ_TO_ROS
+
+# LIDAR measurements: a list of 360 distances, one per laser ray.
+- ros_topic_name: /scan
+  gz_topic_name: /scan
+  ros_type_name: sensor_msgs/msg/LaserScan
+  gz_type_name: gz.msgs.LaserScan
+  direction: GZ_TO_ROS
+
+# Odometry: the robot's estimated position and speed.
+- ros_topic_name: /odom
+  gz_topic_name: /odom
+  ros_type_name: nav_msgs/msg/Odometry
+  gz_type_name: gz.msgs.Odometry
+  direction: GZ_TO_ROS
+
+# Transforms (TF): the odom -> base_link position, so RViz can place the robot.
+- ros_topic_name: /tf
+  gz_topic_name: /tf
+  ros_type_name: tf2_msgs/msg/TFMessage
+  gz_type_name: gz.msgs.Pose_V
+  direction: GZ_TO_ROS
+
+# NOTE: the wheel angles (/joint_states) are NOT listed here. Their Gazebo topic name
+# contains the world's name (/world/<world name>/model/simple_bot/joint_state), and the
+# world can be chosen at launch time. So sim.launch.py starts a second, small bridge
+# just for that topic.
+
+# Velocity commands: this is the ONLY topic that goes the other way, into Gazebo.
+# Our driver nodes (wander, circle_driver, ...) publish here and the robot's DiffDrive plugin obeys.
+- ros_topic_name: /cmd_vel
+  gz_topic_name: /cmd_vel
+  ros_type_name: geometry_msgs/msg/Twist
+  gz_type_name: gz.msgs.Twist
+  direction: ROS_TO_GZ

@@ -1,0 +1,42 @@
+# .gitignore - files and folders that git must NOT store (and so GitHub never sees).
+# Rule of thumb: keep your own source files, ignore everything that is generated
+# automatically or is specific to your computer.
+
+# --- Personal settings (user/group IDs of your computer). See .env.example instead. ---
+.env
+
+# --- ROS 2 / colcon build output. Created by `colcon build`, always re-creatable. ---
+build/
+install/
+log/
+
+# --- Python junk: compiled files and package metadata, created automatically ---
+__pycache__/
+*.pyc
+*.egg-info/
+
+# --- Editor / IDE settings (each developer has their own) ---
+.vscode/
+.idea/
+*.swp
+*~
+
+# --- Operating system clutter ---
+.DS_Store
+Thumbs.db
+
+# --- Crash dumps, logs and temporary files ---
+core
+*.log
+*.tmp
+
+# --- SLAM Toolbox "serialized" maps (.posegraph/.data). They can be big and are only
+#     needed to continue mapping later. The normal map files (.pgm + .yaml) in
+#     src/simple_bot/maps/ are small and useful, so they ARE kept in git. ---
+*.posegraph
+*.data
+
+# --- Rosbag recordings (can be gigabytes) ---
+*.db3
+*.mcap
+rosbag2_*/

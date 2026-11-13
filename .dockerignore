@@ -1,0 +1,8 @@
+# .dockerignore - files Docker must NOT send to the image build.
+# The Dockerfile does not need your code (./src is shared at run time) or git history.
+.git
+src
+.env
+build
+install
+log
